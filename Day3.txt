@@ -1,0 +1,143 @@
+
+credentials WAZUH:
+root
+C1sc0123
+systemctl stop firewalld
+ip addr
+GUI
+https://208.8.8.37 (IP in your VM)
+admin
+C1sc0123..
+
+
+!@ELASTIC
+root
+C1sc0123
+systemctl restart elasticsearch.service
+ip addr
+
+GUI:
+http://208.8.8.133:5601
+admin
+C1sc0123
+
+==========
+f1k:
+enable
+conf t
+int g1
+ip addr dhcp
+no shut
+end
+show ip int bri
+---------------------------------
+conf t
+logging on 
+logging host 208.8.8.136 transport udp port 9001
+logging trap informational
+end
+---------------------------------
+conf t
+archive
+log config
+logging enable
+notify syslog
+end
+---------------------------------
+conf t
+login on-failure log
+login on-success log
+end
+--------------------------------
+config t
+access-list 100 deny ip any host 208.8.8.189 log
+access-list 100 permit ip any any
+interface GigabitEthernet1
+ip access-group 100 in
+end
+
+###get back the ping and able to ssh again
+config t
+interface GigabitEthernet0/0
+no ip access-group 100 in
+end
+
+
+conf t
+NO ip access-list standard NOPORN
+ip access-list standard NOPORN
+DENY 66.254.0.0 0.0.255.255  log
+deny 161.49.0.0 0.0.255.255  log
+DENY 104.21.0.0 0.0.255.255  log
+DENY 68.235.0.0 0.0.255.255  log
+DENY 104.17.0.0 0.0.255.255  log
+DENY 88.208.0.0 0.0.255.255  log
+DENY 208.77.0.0 0.0.255.255  log
+DENY 172.67.0.0 0.0.255.255  log
+DENY 172.66.0.0 0.0.255.255  log
+DENY 162.159.0.0 0.0.255.255 log
+Permit Any
+Int Gi 1
+ ip access-group NOPORN in
+end
+
+!@JUMPSERVER
+root
+C1sc0123
+ip -4 addr
+
+gui
+http://192.168.102.100:4000
+admin
+C1sc0123
+
+#cmd
+ping 10.32.1.4
+
+!@Corebaba
+config t
+ip domain-name rivanit.com
+username admin privilege 15 secret pass
+username mandy privilege 15 secret pass
+crypto key generate rsa
+
+!How many bits in the modulus [512]: 2048
+
+ip ssh version 2
+line vty 0 14
+login local
+transport input ssh
+end
+
+
+!@ZABBIX CReds
+root
+zabbix
+systemctl restart zabbix-server
+dnf install net-snmp-utils -y
+
+GUI
+Admin
+zabbix
+
+-----------------------
+f1k
+!@put in for snmpV2 CSR1000V
+conf t
+access-list 10 permit 208.8.8.141
+snmp-server community public RO 10
+end
+
+!@!@ SNMPV3 csr1000v
+conf t
+snmp-server group zabbix v3 priv
+snmp-server user admin zabbix v3 auth sha C1sc0123 priv aes 128 C1sc0123
+end
+
+
+
+
+
+
+
+
